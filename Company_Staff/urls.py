@@ -387,6 +387,10 @@ urlpatterns = [
     path('edit_journal/<int:journal_id>/', views.edit_journal, name='edit_journal'),
     #End
 
+    # < ------------- Shemeem -------- > Recurring Invoice < ------------------------------- >
+    path('Company/recurring_invoices', views.recurringInvoice, name='recurringInvoice'),
+    path('Company/add_recurring_invoices', views.addRecurringInvoice, name='addRecurringInvoice'),
+
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS)

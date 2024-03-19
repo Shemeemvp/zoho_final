@@ -310,11 +310,11 @@
                 <hr>
                 {% endif %}
                 {% if allmodules.recurring_invoice == 1  %}
-                <a href="" class="d-flex align-items-center gap-2 dropdown-item">
+                <a href="{% url 'recurringInvoice' %}" class="d-flex align-items-center gap-2 dropdown-item">
                  
                   <div class="d-flex">
                     <p class="mb-0 fs-3">Recurring Invoice</p>
-                    <a href=""><i class="fa fa-plus text-white" ></i></a>
+                    <a href="{% url 'addRecurringInvoice' %}"><i class="fa fa-plus text-white" ></i></a>
                   </div>
                 </a>
                 <hr>

@@ -15463,3 +15463,45 @@ def edit_journal(request, journal_id):
         return render(request, 'zohomodules/manual_journal/edit_journal.html', context)
         
 #End
+
+
+# < ------------- Shemeem -------- > Recurring Invoice < ------------------------------- >
+
+def recurringInvoice(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            cmp = CompanyDetails.objects.get(login_details = log_details)
+            dash_details = CompanyDetails.objects.get(login_details=log_details)
+        else:
+            cmp = StaffDetails.objects.get(login_details = log_details).company
+            dash_details = StaffDetails.objects.get(login_details=log_details)
+
+        rec = RecurringInvoice.objects.filter(company = cmp)
+        allmodules= ZohoModules.objects.get(company = cmp)
+        context = {
+            'invoices': rec, 'allmodules':allmodules, 'details':dash_details
+        }
+        return render(request, 'zohomodules/recurring_invoice/recurring_invoice.html', context)
+    else:
+        return redirect('/')
+
+def addRecurringInvoice(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            cmp = CompanyDetails.objects.get(login_details = log_details)
+            dash_details = CompanyDetails.objects.get(login_details=log_details)
+        else:
+            cmp = StaffDetails.objects.get(login_details = log_details).company
+            dash_details = StaffDetails.objects.get(login_details=log_details)
+
+        allmodules= ZohoModules.objects.get(company = cmp)
+        context = {
+            'allmodules':allmodules, 'details':dash_details
+        }
+        return render(request, 'zohomodules/recurring_invoice/add_recurring_invoice.html', context)
+    else:
+        return redirect('/')
