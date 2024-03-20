@@ -390,6 +390,13 @@ urlpatterns = [
     # < ------------- Shemeem -------- > Recurring Invoice < ------------------------------- >
     path('Company/recurring_invoices', views.recurringInvoice, name='recurringInvoice'),
     path('Company/add_recurring_invoices', views.addRecurringInvoice, name='addRecurringInvoice'),
+    path('Company/check_recurring_invoice_number',views.checkRecurringInvoiceNumber, name='checkRecurringInvoiceNumber'),
+    path('Company/get_cust_details',views.getCustomerDetailsAjax, name='getCustomerDetailsAjax'),
+    path('Company/get_bank_acc_num',views.getBankAccountNumberAjax, name='getBankAccountNumberAjax'),
+    path('Company/get_itm_details',views.getItemDetailsAjax, name='getItemDetailsAjax'),
+    path('Company/create_recurring_invoice',views.createRecurringInvoice, name='createRecurringInvoice'),
+    path('Company/new_pymnt_trm',views.newPaymentTermAjax, name='newPaymentTermAjax'),
+    path('Company/new_repeat_every_ajax',views.newRepeatEveryTypeAjax, name='newRepeatEveryTypeAjax'),
 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]

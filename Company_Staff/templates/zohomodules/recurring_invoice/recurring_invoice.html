@@ -90,7 +90,7 @@
             <ol class="breadcrumb">
               <li class="breadcrumb-item"><a href="{% url 'company_dashboard' %}" class="text-warning-emphasis">Dashboard</a></li>
               <li class="breadcrumb-item"><a class="text-warning-emphasis">Sales</a></li>
-              <li class="breadcrumb-item" aria-current="page">Recurring Invoice</li>
+              <li class="breadcrumb-item" aria-current="page">All Recurring Invoice</li>
             </ol>
         </nav>
         <div class="row mt-5">
@@ -162,7 +162,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for i in invoices %}
+                                {% for a in invoices %}
                                 <tr class='clickable-row text-center' data-href="#">
                                     <td>{{ forloop.counter }}</td>
                                     <td>{{ a.start_date }}</td>

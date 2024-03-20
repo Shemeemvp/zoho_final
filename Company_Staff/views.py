@@ -15499,9 +15499,411 @@ def addRecurringInvoice(request):
             dash_details = StaffDetails.objects.get(login_details=log_details)
 
         allmodules= ZohoModules.objects.get(company = cmp)
+        cust = Customer.objects.filter(company = cmp, customer_status = 'Active')
+        trm = Company_Payment_Term.objects.filter(company = cmp)
+        repeat = CompanyRepeatEvery.objects.filter(company = cmp)
+        bnk = Banking.objects.filter(company = cmp)
+        priceList = PriceList.objects.filter(company = cmp, type = 'Sales', status = 'Active')
+        itms = Items.objects.filter(company = cmp, activation_tag = 'active')
+
+        # Fetching last rec_invoice and assigning upcoming ref no as current + 1
+        # Also check for if any bill is deleted and ref no is continuos w r t the deleted rec_invoice
+        latest_inv = RecurringInvoice.objects.filter(company = cmp).order_by('-id').first()
+
+        new_number = int(latest_inv.reference_no) + 1 if latest_inv else 1
+
+        if Reccurring_Invoice_Reference.objects.filter(company = cmp).exists():
+            deleted = Reccurring_Invoice_Reference.objects.get(company = cmp)
+            
+            if deleted:
+                while int(deleted.reference_no) >= new_number:
+                    new_number+=1
+
+        # Finding next rec_invoice number w r t last rec_invoice number if exists.
+        nxtInv = ""
+        lastInv = RecurringInvoice.objects.filter(company = cmp).last()
+        if lastInv:
+            inv_no = str(lastInv.rec_invoice_no)
+            numbers = []
+            stri = []
+            for word in inv_no:
+                if word.isdigit():
+                    numbers.append(word)
+                else:
+                    stri.append(word)
+            
+            num=''
+            for i in numbers:
+                num +=i
+            
+            st = ''
+            for j in stri:
+                st = st+j
+
+            inv_num = int(num)+1
+
+            if num[0] == '0':
+                if inv_num <10:
+                    nxtInv = st+'0'+ str(inv_num)
+                else:
+                    nxtInv = st+ str(inv_num)
+            else:
+                nxtInv = st+ str(inv_num)
+        else:
+            nxtInv = 'RI01'
         context = {
-            'allmodules':allmodules, 'details':dash_details
+            'cmp':cmp,'allmodules':allmodules, 'details':dash_details, 'customers': cust,'pTerms':trm, 'repeat':repeat, 'banks':bnk, 'priceListItems':priceList, 'items':itms,
+            'invNo':nxtInv, 'ref_no':new_number,
         }
         return render(request, 'zohomodules/recurring_invoice/add_recurring_invoice.html', context)
     else:
         return redirect('/')
+
+def getCustomerDetailsAjax(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            cmp = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            cmp = StaffDetails.objects.get(login_details = log_details).company
+        
+        custId = request.POST['id']
+        cust = Customer.objects.get(id = custId)
+
+        if cust:
+            context = {
+                'status':True, 'id':cust.id, 'email':cust.customer_email, 'gstType':cust.GST_treatement,'shipState':cust.place_of_supply,'gstin':False if cust.GST_number == "" or cust.GST_number == None else True, 'gstNo':cust.GST_number,
+                'street':cust.billing_address, 'city':cust.billing_city, 'state':cust.billing_state, 'country':cust.billing_country, 'pincode':cust.billing_pincode
+            }
+            return JsonResponse(context)
+        else:
+            return JsonResponse({'status':False, 'message':'Something went wrong..!'})
+    else:
+       return redirect('/')
+
+def getBankAccountNumberAjax(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            cmp = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            cmp = StaffDetails.objects.get(login_details = log_details).company
+        
+        bankId = request.GET['id']
+        bnk = Banking.objects.get(id = bankId)
+
+        if bnk:
+            return JsonResponse({'status':True, 'account':bnk.bnk_acno})
+        else:
+            return JsonResponse({'status':False, 'message':'Something went wrong..!'})
+    else:
+       return redirect('/')
+
+def getItemDetailsAjax(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            cmp = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            cmp = StaffDetails.objects.get(login_details = log_details).company
+        
+        itemName = request.GET['item']
+        priceListId = request.GET['listId']
+        item = Items.objects.filter(company = cmp, item_name = itemName).first()
+
+        if priceListId != "":
+            priceList = PriceList.objects.get(id = int(priceListId))
+
+            if priceList.item_rate_type == 'Each Item':
+                try:
+                    priceListPrice = float(PriceListItem.objects.get(company = cmp, price_list = priceList, item = item).custom_rate)
+                except:
+                    priceListPrice = item.selling_price
+            else:
+                mark = priceList.percentage_type
+                percentage = float(priceList.percentage_value)
+                roundOff = priceList.round_off
+
+                if mark == 'Markup':
+                    price = float(item.selling_price) + float((item.selling_price) * (percentage/100))
+                else:
+                    price = float(item.selling_price) - float((item.selling_price) * (percentage/100))
+
+                if priceList.round_off != 'Never Mind':
+                    if roundOff == 'Nearest Whole Number':
+                        finalPrice = round(price)
+                    else:
+                        finalPrice = int(price) + float(roundOff)
+                else:
+                    finalPrice = price
+
+                priceListPrice = finalPrice
+        else:
+            priceListPrice = None
+
+        context = {
+            'status':True,
+            'id': item.id,
+            'hsn':item.hsn_code,
+            'sales_rate':item.selling_price,
+            'purchase_rate':item.purchase_price,
+            'avl':item.current_stock,
+            'tax': True if item.tax_reference == 'taxable' else False,
+            'gst':item.intrastate_tax,
+            'igst':item.interstate_tax,
+            'PLPrice':priceListPrice,
+
+        }
+        return JsonResponse(context)
+    else:
+       return redirect('/')
+
+def createRecurringInvoice(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+
+        if request.method == 'POST':
+            invNum = request.POST['rec_invoice_no']
+            if RecurringInvoice.objects.filter(company = com, rec_invoice_no__iexact = invNum).exists():
+                res = f'<script>alert("Rec. Invoice Number `{invNum}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            inv = RecurringInvoice(
+                company = com,
+                login_details = com.login_details,
+                customer = Customer.objects.get(id = request.POST['customerId']),
+                customer_email = request.POST['customer_email'],
+                billing_address = request.POST['bill_address'],
+                gst_type = request.POST['customer_gst_type'],
+                gstin = request.POST['customer_gstin'],
+                place_of_supply = request.POST['place_of_supply'],
+                profile_name = request.POST['profile_name'],
+                entry_type = None if request.POST['entry_type'] == "" else request.POST['entry_type'],
+                reference_no = request.POST['reference_number'],
+                rec_invoice_no = invNum,
+                payment_terms = Company_Payment_Term.objects.get(id = request.POST['payment_term']),
+                start_date = request.POST['start_date'],
+                end_date = datetime.strptime(request.POST['end_date'], '%d-%m-%Y').date(),
+                salesOrder_no = request.POST['order_number'],
+                price_list_applied = True if 'priceList' in request.POST else False,
+                price_list = None if request.POST['price_list_id'] == "" else PriceList.objects.get(id = request.POST['price_list_id']),
+                repeat_every = CompanyRepeatEvery.objects.get(id = request.POST['repeat_every']),
+                payment_method = None if request.POST['payment_method'] == "" else request.POST['payment_method'],
+                cheque_number = None if request.POST['cheque_id'] == "" else request.POST['cheque_id'],
+                upi_number = None if request.POST['upi_id'] == "" else request.POST['upi_id'],
+                bank_account_number = None if request.POST['bnk_id'] == "" else request.POST['bnk_id'],
+                subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal']),
+                igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst']),
+                cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst']),
+                sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst']),
+                tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount']),
+                adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj']),
+                shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship']),
+                grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal']),
+                advance_paid = 0.0 if request.POST['advance'] == "" else float(request.POST['advance']),
+                balance = request.POST['grandtotal'] if request.POST['balance'] == "" else float(request.POST['balance']),
+                description = request.POST['note'],
+                terms_and_conditions = request.POST['terms']
+            )
+
+            inv.save()
+
+            if len(request.FILES) != 0:
+                inv.document=request.FILES.get('file')
+            inv.save()
+
+            if 'Draft' in request.POST:
+                inv.status = "Draft"
+            elif "Saved" in request.POST:
+                inv.status = "Saved" 
+            inv.save()
+
+            # Save rec_invoice items.
+
+            itemId = request.POST.getlist("item_id[]")
+            itemName = request.POST.getlist("item_name[]")
+            hsn  = request.POST.getlist("hsn[]")
+            qty = request.POST.getlist("qty[]")
+            price = request.POST.getlist("priceListPrice[]") if 'priceList' in request.POST else request.POST.getlist("price[]")
+            tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.state else request.POST.getlist("taxIGST[]")
+            discount = request.POST.getlist("discount[]")
+            total = request.POST.getlist("total[]")
+
+            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and itemId and itemName and hsn and qty and price and tax and discount and total:
+                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total)
+                mapped = list(mapped)
+                for ele in mapped:
+                    itm = Items.objects.get(id = int(ele[0]))
+                    Reccurring_Invoice_item.objects.create(company = com, login_details = com.login_details, reccuring_invoice = inv, item = itm, hsn = ele[2], quantity = int(ele[3]), price = float(ele[4]), tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                    itm.current_stock -= int(ele[3])
+                    itm.save()
+
+            # Save transaction
+                    
+            RecurringInvoiceHistory.objects.create(
+                company = com,
+                login_details = com.login_details,
+                recurring_invoice = inv,
+                action = 'Created'
+            )
+
+            return redirect(recurringInvoice)
+        else:
+            return redirect(addRecurringInvoice)
+    else:
+       return redirect('/')
+
+def newPaymentTermAjax(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+
+        term = request.POST['term']
+        days = request.POST['days']
+
+        if not Company_Payment_Term.objects.filter(company = com, term_name__iexact = term).exists():
+            Company_Payment_Term.objects.create(company = com, term_name = term, days =days)
+            
+            list= []
+            terms = Company_Payment_Term.objects.filter(company = com)
+
+            for term in terms:
+                termDict = {
+                    'name': term.term_name,
+                    'id': term.id,
+                    'days':term.days
+                }
+                list.append(termDict)
+
+            return JsonResponse({'status':True,'terms':list},safe=False)
+        else:
+            return JsonResponse({'status':False, 'message':f'{term} already exists, try another.!'})
+
+    else:
+        return redirect('/')
+
+def newRepeatEveryTypeAjax(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+
+        dur = int(request.POST['duration'])
+        type = request.POST['type']
+
+        d = 30 if type == 'Month' else 360
+        dys = dur * d
+        print(dur,d,dys)
+        rep_every = str(dur)+" "+type
+
+        if not CompanyRepeatEvery.objects.filter(company = com, repeat_every__iexact = rep_every).exists():
+            CompanyRepeatEvery.objects.create(company = com, repeat_every = rep_every, repeat_type = type, duration = dur, days = dys)
+            
+            list= []
+            rep = CompanyRepeatEvery.objects.filter(company = com)
+
+            for r in rep:
+                repDict = {
+                    'repeat_every': r.repeat_every,
+                    'id': r.id
+                }
+                list.append(repDict)
+
+            return JsonResponse({'status':True,'terms':list},safe=False)
+        else:
+            return JsonResponse({'status':False, 'message':f'{rep_every} already exists, try another.!'})
+
+    else:
+        return redirect('/')
+
+def checkRecurringInvoiceNumber(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+        
+        RecInvNo = request.GET['RecInvNum']
+
+        # Finding next rec_invoice number w r t last rec_invoice number if exists.
+        nxtInv = ""
+        lastInv = RecurringInvoice.objects.filter(company = com).last()
+        if lastInv:
+            inv_no = str(lastInv.rec_invoice_no)
+            numbers = []
+            stri = []
+            for word in inv_no:
+                if word.isdigit():
+                    numbers.append(word)
+                else:
+                    stri.append(word)
+            
+            num=''
+            for i in numbers:
+                num +=i
+            
+            st = ''
+            for j in stri:
+                st = st+j
+
+            inv_num = int(num)+1
+
+            if num[0] == '0':
+                if inv_num <10:
+                    nxtInv = st+'0'+ str(inv_num)
+                else:
+                    nxtInv = st+ str(inv_num)
+            else:
+                nxtInv = st+ str(inv_num)
+        # else:
+        #     nxtInv = 'RI01'
+
+        PatternStr = []
+        for word in RecInvNo:
+            if word.isdigit():
+                pass
+            else:
+                PatternStr.append(word)
+        
+        pattern = ''
+        for j in PatternStr:
+            pattern += j
+
+        # pattern_exists = checkRecInvNumberPattern(pattern)
+
+        # if pattern !="" and pattern_exists:
+        #     return JsonResponse({'status':False, 'message':'Rec. Invoice No. Pattern already Exists.!'})
+        if RecurringInvoice.objects.filter(company = com, rec_invoice_no__iexact = RecInvNo).exists():
+            return JsonResponse({'status':False, 'message':'Rec. Invoice No. already Exists.!'})
+        elif nxtInv != "" and RecInvNo != nxtInv:
+            return JsonResponse({'status':False, 'message':'Rec. Invoice No. is not continuous.!'})
+        else:
+            return JsonResponse({'status':True, 'message':'Number is okay.!'})
+    else:
+       return redirect('/')
+
+# def checkRecInvNumberPattern(pattern):
+#     models = [Fin_Invoice, Fin_Sales_Order, Fin_Estimate, Fin_Purchase_Bill, Fin_Manual_Journal]
+
+#     for model in models:
+#         field_name = model.getNumFieldName(model)
+#         if model.objects.filter(**{f"{field_name}__icontains": pattern}).exists():
+#             return True
+#     return False

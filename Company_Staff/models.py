@@ -916,6 +916,8 @@ class RecurringInvoice(models.Model):
     salesOrder_no = models.CharField(max_length=100, null=True, blank=True)
     repeat_every = models.ForeignKey(CompanyRepeatEvery, on_delete=models.CASCADE,null=True)
     payment_terms = models.ForeignKey(Company_Payment_Term, on_delete=models.CASCADE,null=True)
+    price_list_applied = models.BooleanField(null=True, default=False)
+    price_list = models.ForeignKey(PriceList, on_delete = models.SET_NULL,null=True)
     payment_method = models.CharField(max_length=20, null=True,blank=True)
     cheque_number = models.CharField(max_length=100, null=True, blank=True)
     upi_number = models.CharField(max_length=100, null=True, blank=True)
@@ -938,6 +940,9 @@ class RecurringInvoice(models.Model):
         ('Saved', 'Saved'),
     ]
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+
+    def getNumFieldName(self):
+        return 'rec_invoice_no'
 
 
 class RecurringInvoiceHistory(models.Model):
