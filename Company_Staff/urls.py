@@ -398,6 +398,7 @@ urlpatterns = [
     path('Company/new_pymnt_trm',views.newPaymentTermAjax, name='newPaymentTermAjax'),
     path('Company/new_repeat_every_ajax',views.newRepeatEveryTypeAjax, name='newRepeatEveryTypeAjax'),
     path('Company/new_sales_customer_ajax',views.newSalesCustomerAjax, name='newSalesCustomerAjax'),
+    path('Company/get_all_cust',views.getCustomersAjax, name='getCustomersAjax'),
 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]

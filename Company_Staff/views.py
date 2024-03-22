@@ -15505,6 +15505,8 @@ def addRecurringInvoice(request):
         bnk = Banking.objects.filter(company = cmp)
         priceList = PriceList.objects.filter(company = cmp, type = 'Sales', status = 'Active')
         itms = Items.objects.filter(company = cmp, activation_tag = 'active')
+        units = Unit.objects.filter(company=cmp)
+        accounts=Chart_of_Accounts.objects.filter(company=cmp)
 
         # Fetching last rec_invoice and assigning upcoming ref no as current + 1
         # Also check for if any bill is deleted and ref no is continuos w r t the deleted rec_invoice
@@ -15553,7 +15555,7 @@ def addRecurringInvoice(request):
             nxtInv = 'RI01'
         context = {
             'cmp':cmp,'allmodules':allmodules, 'details':dash_details, 'customers': cust,'pTerms':trm, 'repeat':repeat, 'banks':bnk, 'priceListItems':priceList, 'items':itms,
-            'invNo':nxtInv, 'ref_no':new_number,
+            'invNo':nxtInv, 'ref_no':new_number,'units': units,'accounts':accounts,
         }
         return render(request, 'zohomodules/recurring_invoice/add_recurring_invoice.html', context)
     else:
@@ -15950,14 +15952,14 @@ def newSalesCustomerAjax(request):
 
             customer_data.place_of_supply=request.POST['source_supply']
             customer_data.currency=request.POST['currency']
-            op_type=request.POST.get('op_type')
+            op_type = request.POST.get('op_type')
             if op_type is not None:
-                customer_data.opening_balance_type=op_type
+                customer_data.opening_balance_type = op_type
             else:
-                customer_data.opening_balance_type='Opening Balance not selected'
+                customer_data.opening_balance_type ='Opening Balance not selected'
 
             customer_data.opening_balance=request.POST['opening_bal']
-            customer_data.company_payment_terms=Company_Payment_Term.objects.get(id=request.POST['payment_terms'])
+            customer_data.company_payment_terms= None if request.POST['payment_terms'] == "" else Company_Payment_Term.objects.get(id=request.POST['payment_terms'])
             # customer_data.price_list=request.POST['plst']
             plst=request.POST.get('plst')
             if plst!=0:
@@ -16016,36 +16018,49 @@ def newSalesCustomerAjax(request):
             vendor_history_obj.save()
 
             vdata=Customer.objects.get(id=customer_data.id)
-            vendor=vdata
             rdata=Customer_remarks_table()
             rdata.remarks=request.POST['remark']
             rdata.company=com
             rdata.customer=vdata
             rdata.save()
 
-
-        #...........................adding multiple rows of table to model  ........................................................  
         
-            title =request.POST.getlist('salutation[]')
-            first_name =request.POST.getlist('first_name[]')
-            last_name =request.POST.getlist('last_name[]')
-            email =request.POST.getlist('email[]')
-            work_phone =request.POST.getlist('wphone[]')
-            mobile =request.POST.getlist('mobile[]')
-            skype_name_number =request.POST.getlist('skype[]')
-            designation =request.POST.getlist('designation[]')
-            department =request.POST.getlist('department[]') 
+            title =request.POST.getlist('tsalutation[]')
+            first_name =request.POST.getlist('tfirstName[]')
+            last_name =request.POST.getlist('tlastName[]')
+            email =request.POST.getlist('tEmail[]')
+            work_phone =request.POST.getlist('tWorkPhone[]')
+            mobile =request.POST.getlist('tMobilePhone[]')
+            skype_name_number =request.POST.getlist('tSkype[]')
+            designation =request.POST.getlist('tDesignation[]')
+            department =request.POST.getlist('tDepartment[]') 
             vdata=Customer.objects.get(id=customer_data.id)
-            vendor=vdata
-            
-            if title != ['Select']:
-                if len(title)==len(first_name)==len(last_name)==len(email)==len(work_phone)==len(mobile)==len(skype_name_number)==len(designation)==len(department):
-                    mapped2=zip(title,first_name,last_name,email,work_phone,mobile,skype_name_number,designation,department)
-                    mapped2=list(mapped2)
-                    print(mapped2)
-                    for ele in mapped2:
-                        created = CustomerContactPersons.objects.get_or_create(title=ele[0],first_name=ele[1],last_name=ele[2],email=ele[3],
-                                work_phone=ele[4],mobile=ele[5],skype=ele[6],designation=ele[7],department=ele[8],company=com,customer=vendor)
+
+            if len(title)==len(first_name)==len(last_name)==len(email)==len(work_phone)==len(mobile)==len(skype_name_number)==len(designation)==len(department):
+                mapped2=zip(title,first_name,last_name,email,work_phone,mobile,skype_name_number,designation,department)
+                mapped2=list(mapped2)
+                print(mapped2)
+                for ele in mapped2:
+                    CustomerContactPersons.objects.create(title=ele[0],first_name=ele[1],last_name=ele[2],email=ele[3],work_phone=ele[4],mobile=ele[5],skype=ele[6],designation=ele[7],department=ele[8],company=com,customer=vdata)
         
-        
-        return JsonResponse({'status':True})
+            return JsonResponse({'status':True})
+        else:
+            return JsonResponse({'status':False})
+
+def getCustomersAjax(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+
+        options = {}
+        option_objects = Customer.objects.filter(company = com, customer_status = 'Active')
+        for option in option_objects:
+            options[option.id] = [option.id , option.title, option.first_name, option.last_name]
+
+        return JsonResponse(options)
+    else:
+        return redirect('/')
