@@ -402,6 +402,9 @@ urlpatterns = [
     path('Company/get_units_ajax',views.getUnitsAjax, name='getUnitsAjax'),
     path('Company/save_new_itm',views.createNewItemAjax, name='createNewItemAjax'),
     path('Company/get_all_itms',views.getAllItemsAjax, name='getAllItemsAjax'),
+    path('Company/create_new_acc',views.createNewAccountAjax, name= 'createNewAccountAjax'),
+    path('Company/get_all_accnts',views.getAllAccountsAjax, name='getAllAccountsAjax'),
+    path('Company/edit_recurring_invoice/<int:id>',views.editRecurringInvoice, name='editRecurringInvoice'),
 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]
