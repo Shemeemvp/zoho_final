@@ -405,6 +405,13 @@ urlpatterns = [
     path('Company/create_new_acc',views.createNewAccountAjax, name= 'createNewAccountAjax'),
     path('Company/get_all_accnts',views.getAllAccountsAjax, name='getAllAccountsAjax'),
     path('Company/edit_recurring_invoice/<int:id>',views.editRecurringInvoice, name='editRecurringInvoice'),
+    path('Company/view_recurring_invoice/<int:id>',views.viewRecurringInvoice, name='viewRecurringInvoice'),
+    path('Compnay/update_recurring_invoice/<int:id>',views.updateRecurringInvoice, name='updateRecurringInvoice'),
+    path('Company/convert_recurring_invoice/<int:id>',views.convertRecurringInvoice, name='convertRecurringInvoice'),
+    path('Company/add_recurring_invoice_comments/<int:id>',views.addRecurringInvoiceComment, name = 'addRecurringInvoiceComment'),
+    path('Company/delete_recurring_invoice_comment/<int:id>',views.deleteRecurringInvoiceComment, name='deleteRecurringInvoiceComment'),
+    path('Company/deleteRecurringInvoice/<int:id>',views.deleteRecurringInvoice, name='deleteRecurringInvoice'),
+    path('Company/add_recurring_invoice_document/<int:id>',views.attachRecurringInvoiceFile, name='attachRecurringInvoiceFile'),
 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]
