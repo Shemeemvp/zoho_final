@@ -16324,9 +16324,11 @@ def viewRecurringInvoice(request, id):
         recInv = RecurringInvoice.objects.filter(company = cmp)
         cmts = Recurring_Invoice_Comments.objects.filter(recurring_invoice = invoice)
         hist = RecurringInvoiceHistory.objects.filter(recurring_invoice = invoice)
+        last_history = RecurringInvoiceHistory.objects.filter(recurring_invoice = invoice).last()
+        created = RecurringInvoiceHistory.objects.get(recurring_invoice = invoice, action = 'Created')
 
         context = {
-            'cmp':cmp,'allmodules':allmodules, 'details':dash_details, 'invoice':invoice, 'invItems': invItems, 'allInvoices':recInv, 'comments':cmts, 'history':hist,
+            'cmp':cmp,'allmodules':allmodules, 'details':dash_details, 'invoice':invoice, 'invItems': invItems, 'allInvoices':recInv, 'comments':cmts, 'history':hist, 'last_history':last_history, 'created':created,
         }
         return render(request, 'zohomodules/recurring_invoice/view_recurring_invoice.html', context)
     else:
