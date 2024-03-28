@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+{% load social_share %}
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.js"></script>
@@ -332,6 +333,11 @@
     .balance-info tr td:first-child {
         font-weight: 600;
     }
+
+    .whatsapp-this a {
+      color: black;
+      padding-left: 15px;
+    }
 </style>
 
 <div class="body-wrapper" id="body_wrapper">
@@ -446,19 +452,26 @@
                         <a class="btn btn-outline-warning small_btn mt-2 ms-1" href="{% url 'deleteRecurringInvoice' invoice.id %}" onclick="return confirm('Are you sure you want to delete this Recurring Invoice - {{invoice.rec_invoice_no}} ?')" title="DELETE" id="delete_btn">
                           <i class="fa fa-trash"></i>
                         </a>
-                        <a class="btn btn-outline-warning small_btn mt-2 ms-1" style="display: none;" title="SHARE" id="share_btn" data-toggle="modal" data-target="#snd_mail">
+                        <a class="btn btn-outline-warning small_btn mt-2 ms-1" style="display: none;" title="SHARE" id="share_btn" data-bs-toggle="dropdown" aria-expanded="false">
                           <i class="fas fa-share"></i>
-                        </a>
-                        <a class="btn btn-outline-warning small_btn mt-2 ms-1" id="attach_btn" data-toggle="dropdown">
+                      </a>
+                      <div class="dropdown-menu" aria-labelledby="share_btn">
+                          <li class="text-black">{% post_to_whatsapp object_or_url "WhatsApp" %}</li>
+                          <!-- <a class="dropdown-item text-black">{% post_to_whatsapp object_or_url "WhatsApp" %}</a> -->
+                          <a class="dropdown-item text-black" data-toggle="modal" data-target="#shareToEmail">Email</a>
+                      </div>
+                      
+                      <a class="btn btn-outline-warning small_btn mt-2 ms-1" id="attach_btn" data-bs-toggle="dropdown" aria-expanded="false">
                           <i class="fas fa-paperclip"></i>
-                        </a>
-                        <div class="dropdown-menu">
+                      </a>
+                      <div class="dropdown-menu" aria-labelledby="attach_btn">
                           <a class="dropdown-item text-black" data-toggle="modal" data-target="#bnk_files">Add Document</a>
                           {% if invoice.document != "" %} 
                           <a class="dropdown-item text-black" download href="{{invoice.document.url}}">Download Document</a>
                           {% endif %}
-                        </div>
-                        <a class="btn btn-outline-warning small_btn mt-2 ms-1" style="display: none;" onclick="export_as_pdf()" title="PDF" id="pdf_btn"> 
+                      </div>
+                      
+                        <a href="{% url 'recurringInvoicePdf' invoice.id %}" class="btn btn-outline-warning small_btn mt-2 ms-1" style="display: none;" title="PDF" id="pdf_btn"> 
                           <i class="fa fa-file-pdf"></i>
                         </a>
                         <a class="btn btn-outline-warning small_btn mt-2 ms-1" style="display: none;" onclick="slipPdf()" title="SLIP PDF" id="slipPdf_btn"> 
@@ -1329,41 +1342,40 @@
 </div>
 
 
-<!-- Send Mail  -->
-<div class="modal fade" id="snd_mail">
-  <div class="modal-dialog modal-lg">
+<!-- Share Email  -->
+<div class="modal fade" id="shareToEmail">
+  <div class="modal-dialog">
     <div class="modal-content" style="background-color: #3b3b3b;">
       <div class="modal-header">
-        <h3 class="modal-title text-light" id="exampleModalLabel">Share Recurring Invoice to Email</h3>
+        <h3 class="modal-title text-light" id="exampleModalLabel">Share Recurring Invoice</h3>
         <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true" style="font-size: x-large;">&times;</span>
         </button>
       </div>
       <div class="modal-body mx-3" style="background-color: #000;">
-        <form action="" method="post" class="needs-validation" novalidate enctype="multipart/form-data">
+        <form action="{% url 'shareRecurringInvoiceToEmail' invoice.id %}" method="post" id="share_to_email_form" class="needs-validation" novalidate enctype="multipart/form-data">
           {%csrf_token%}
-          <div class="row">
-            <div class="col-md-1"></div>
-            <div class="col-md-10">
-              <label class="mb-3" for="origin" style="color: white; font-size: large;">Enter Email</label><br>
-              <textarea class="form-control text-white bg-black" name="mail" rows="5" required></textarea>
-            </div>
-            <div class="col-md-1"></div>
+          <div class="form-group">
+              <label for="emailIds">Email IDs</label>
+              <textarea class="form-control" name="email_ids" id="emailIds" rows="3" placeholder="Multiple emails can be added by separating with a comma(,)." required></textarea>
+          </div>
+          <div class="form-group mt-2">
+              <label for="item_unitname">Message(optional)</label>
+              <textarea name="email_message" id="email_message" class="form-control" cols="" rows="4" placeholder="This message will be sent along with Bill details."></textarea>
           </div>
           <div class="row mt-3">
             <div class="col-md-4"></div>
             <div class="col-md-4">
               <div class="d-flex">
-                <button class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50 text-white" type="submit">Send</button> 
-                <input class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50 text-white" type="reset" value="Reset">
+                <button class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50" type="button" id="share_with_email">Save</button> 
+                <input class="btn save_btn btn-outline-warning mt-2 my-4 mx-2 w-50" data-dismiss="modal" type="reset" value="Close">
               </div>
             </div>
             <div class="col-md-4"></div>
           </div>
         </form>
       </div>
-      <div class="modal-footer">
-      </div>
+      <div class="modal-footer"></div>
     </div>
   </div>
 </div>
@@ -1512,6 +1524,38 @@
 
 
 <script>
+  $('#share_with_email').on('click',function(){
+    var emailsInput = document.getElementById('emailIds');
+    var emailsString = emailsInput.value.trim();
+
+    var emails = emailsString.split(',').map(function(email) {
+        return email.trim();
+    });
+
+    var emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+
+    var invalidEmails = []
+    if(emailsString == ""){
+        alert('Enter valid email addresses..')
+    }
+    else{
+        for (var i = 0; i < emails.length; i++) {
+            var currentEmail = emails[i];
+
+            if (currentEmail!="" && !emailRegex.test(currentEmail)) {
+                console.log(currentEmail + ' is invalid!');
+                invalidEmails.push(currentEmail)
+            }
+        }
+        
+        if(invalidEmails.length > 0){
+            alert('Invalid emails..Please check!\n'+invalidEmails)
+            // alert(invalidEmails)
+        }else{
+            $('#share_to_email_form').submit();
+        }
+    }
+})
   function updateDateTime() {
     var currentDate = new Date();
     var day = currentDate.getDate();

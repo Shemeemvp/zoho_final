@@ -132,7 +132,7 @@
                                 <a class="dropdown-item text-black" onclick="filterTable(6,'draft')">Draft</a>
                                 <a class="dropdown-item text-black" onclick="filterTable(6,'saved')">Saved</a>
                             </div>
-                            <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" onclick="reduce_dash()" data-bs-toggle="modal" data-bs-target="#import_modal" class="btn btn-outline-warning"  href="">
+                            <a style="border: 1px solid; border-radius: 5px; height: 2.4rem; display: flex; align-items: center;" data-bs-toggle="modal" href="#importModal" class="btn btn-outline-warning">
                                 <i class="fa fa-file-excel p-1" style="font-size: large;"></i>
                                 <span style="font-size: 2vh; margin-left: 0.5rem;" class="text-center">Import</span>
                             </a>
@@ -182,6 +182,49 @@
         </div>
     </div>
 </div> 
+
+<!-- Import Estimate modal -->
+<div class="modal fade" id="importModal">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="background-color: #3b3b3b;">
+            <div class="modal-header">
+                <h3 class="modal-title text-light" id="exampleModalLabel">Import Recurring Invoice</h3>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true" style="font-size: x-large;">&times;</span>
+                </button>
+              </div>
+            <div class="modal-body mx-3 rounded-1" style="background-color: #000;">
+                <div class="file_instructions">
+                    <div class="alert alert-danger" role="alert">
+                        <span class="fw-bolder">IMPORTANT:</span>
+                        <p>File should have 2 sheets named 'estimate' & 'items' and column name & order should be in the given formate(Uppercase).</p>
+                        <p class="fw-bolder">Estimate sheet - SLNO*, DATE, NAME*, STATE OF SUPPLY*, DESCRIPTION, SUB TOTAL*, IGST*, CGST*, SGST*, TAX AMOUNT*, ADJUSTMENT, GRAND TOTAL* </p>
+                        <p class="fw-bolder">Items sheet - ESTIMATE NO**, NAME*, HSN*, QUANTITY*, PRICE*, TAX PERCENTAGE*, DISCOUNT, TOTAL* </p>
+                        <p>* All required columns should be filled.</p>
+                        <p>** <b>ESTIMATE NO</b> is <b>SLNO</b> of estimate</p>
+                        <p>State of supply should be '<b>State</b>' or '<b>Other State</b>'. State -> CGST* & SGST*, Other State -> IGST*</p>
+                        <p>Date format should be 'YYYY-MM-DD' or 'DD-MM-YYYY'.</p>
+                    </div>
+                </div>
+                <div class="sample_file mb-2">
+                    <a href="{% url 'downloadRecurringInvoiceSampleImportFile' %}" class="fw-bolder">Download Sample File</a>
+                </div>
+                <form id="importEstimateForm" action="{% url 'importRecurringInvoiceFromExcel' %}" method="POST" class="form" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="excel_file" class="form-label">File</label>
+                        <input id="excel_file" class="form-control" type="file" name="excel_file" required>
+                    </div>
+                    <div class="d-flex justify-content-center mt-4">
+                        <input id="submit_import_excel" value="IMPORT" class="btn btn-outline-warning" type="submit">
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="modal-footer"></div>
+        </div>
+    </div>
+</div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 

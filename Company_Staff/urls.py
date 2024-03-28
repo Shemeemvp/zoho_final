@@ -412,6 +412,10 @@ urlpatterns = [
     path('Company/delete_recurring_invoice_comment/<int:id>',views.deleteRecurringInvoiceComment, name='deleteRecurringInvoiceComment'),
     path('Company/deleteRecurringInvoice/<int:id>',views.deleteRecurringInvoice, name='deleteRecurringInvoice'),
     path('Company/add_recurring_invoice_document/<int:id>',views.attachRecurringInvoiceFile, name='attachRecurringInvoiceFile'),
+    path('Company/recurring_invoice_pdf/<int:id>',views.recurringInvoicePdf, name='recurringInvoicePdf'),
+    path('Company/share_recurring_invoice_to_mail/<int:id>',views.shareRecurringInvoiceToEmail, name='shareRecurringInvoiceToEmail'),
+    path('Company/rec_invoice_import_sample_file',views.downloadRecurringInvoiceSampleImportFile, name='downloadRecurringInvoiceSampleImportFile'),
+    path('Company/import_recurring_invoice',views.importRecurringInvoiceFromExcel, name='importRecurringInvoiceFromExcel'),
 
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]

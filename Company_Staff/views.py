@@ -67,6 +67,8 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import Spacer
+from xhtml2pdf import pisa
+from django.core.mail import EmailMessage as EmailMsg
 
 
 # Create your views here.
@@ -16541,5 +16543,269 @@ def attachRecurringInvoiceFile(request, id):
             inv.save()
 
         return redirect(viewRecurringInvoice, id)
+    else:
+        return redirect('/')
+
+def recurringInvoicePdf(request,id):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+        
+        inv = RecurringInvoice.objects.get(id = id)
+        itms = Reccurring_Invoice_item.objects.filter(reccuring_invoice = inv)
+    
+        context = {'recInvoice':inv, 'recInvItems':itms,'cmp':com}
+        
+        template_path = 'zohomodules/recurring_invoice/recurring_invoice_pdf.html'
+        fname = 'Recurring_Invoice_'+inv.rec_invoice_no
+        # Create a Django response object, and specify content_type as pdftemp_
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] =f'attachment; filename = {fname}.pdf'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+        html, dest=response)
+        # if error then show some funny view
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response
+    else:
+        return redirect('/')
+
+def shareRecurringInvoiceToEmail(request,id):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company
+        
+        inv = RecurringInvoice.objects.get(id = id)
+        itms = Reccurring_Invoice_item.objects.filter(reccuring_invoice = inv)
+        try:
+            if request.method == 'POST':
+                emails_string = request.POST['email_ids']
+
+                # Split the string by commas and remove any leading or trailing whitespace
+                emails_list = [email.strip() for email in emails_string.split(',')]
+                email_message = request.POST['email_message']
+                # print(emails_list)
+            
+                context = {'recInvoice':inv, 'recInvItems':itms,'cmp':com}
+                template_path = 'zohomodules/recurring_invoice/recurring_invoice_pdf.html'
+                template = get_template(template_path)
+
+                html  = template.render(context)
+                result = BytesIO()
+                pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+                pdf = result.getvalue()
+                filename = f'Recurring Invoice_{inv.rec_invoice_no}'
+                subject = f"Recurring_Invoice_{inv.rec_invoice_no}"
+                # from django.core.mail import EmailMessage as EmailMsg
+                email = EmailMsg(subject, f"Hi,\nPlease find the attached Recurring Invoice for - REC. INVOICE-{inv.rec_invoice_no}. \n{email_message}\n\n--\nRegards,\n{com.company_name}\n{com.address}\n{com.state} - {com.country}\n{com.contact}", from_email=settings.EMAIL_HOST_USER, to=emails_list)
+                email.attach(filename, pdf, "application/pdf")
+                email.send(fail_silently=False)
+
+                messages.success(request, 'Rec. Invoice details has been shared via email successfully..!')
+                return redirect(viewRecurringInvoice,id)
+        except Exception as e:
+            print(e)
+            messages.error(request, f'{e}')
+            return redirect(viewRecurringInvoice, id)
+
+def downloadRecurringInvoiceSampleImportFile(request):
+    recInv_table_data = [['SLNO','CUSTOMER','DATE','PLACE OF SUPPLY','PROFILE NAME','ENTRY TYPE','RI NO','TERMS','REPEAT EVERY','PAYMENT TYPE','PRICE LIST','DESCRIPTION','SUB TOTAL','IGST','CGST','SGST','TAX AMOUNT','ADJUSTMENT','SHIPPING CHARGE','GRAND TOTAL','ADVANCE'],['1', 'Kevin Debryne', '2024-03-20', 'Kerala', 'Kevin Debryne','Invoice','RI100','NET 30','3 Months','Cash','','','1000','0','25','25','50','0','0','1050','1000']]
+    items_table_data = [['RI NO', 'PRODUCT','HSN','QUANTITY','PRICE','TAX PERCENTAGE','DISCOUNT','TOTAL'], ['1', 'Test Item 1','789987','1','1000','5','0','1000']]
+
+    wb = Workbook()
+
+    sheet1 = wb.active
+    sheet1.title = 'recurring_invoice'
+    sheet2 = wb.create_sheet(title='items')
+
+    # Populate the sheets with data
+    for row in recInv_table_data:
+        sheet1.append(row)
+
+    for row in items_table_data:
+        sheet2.append(row)
+
+    # Create a response with the Excel file
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=recurring_invoice_sample_file.xlsx'
+
+    # Save the workbook to the response
+    wb.save(response)
+
+    return response
+
+def importRecurringInvoiceFromExcel(request):
+    if 'login_id' in request.session:
+        log_id = request.session['login_id']
+        log_details= LoginDetails.objects.get(id=log_id)
+        if log_details.user_type == 'Company':
+            com = CompanyDetails.objects.get(login_details = log_details)
+        else:
+            com = StaffDetails.objects.get(login_details = log_details).company 
+    
+        current_datetime = timezone.now()
+        dateToday =  current_datetime.date()
+
+        if request.method == "POST" and 'excel_file' in request.FILES:
+        
+            excel_file = request.FILES['excel_file']
+
+            wb = load_workbook(excel_file)
+
+            # checking estimate sheet columns
+            try:
+                ws = wb["estimate"]
+            except:
+                print('sheet not found')
+                messages.error(request,'`estimate` sheet not found.! Please check.')
+                return redirect(estimate_quotation)
+
+            try:
+                ws = wb["items"]
+            except:
+                print('sheet not found')
+                messages.error(request,'`items` sheet not found.! Please check.')
+                return redirect(estimate_quotation)
+            
+            ws = wb["estimate"]
+            estimate_columns = ['SLNO','DATE','NAME','STATE OF SUPPLY','DESCRIPTION','SUB TOTAL','IGST','CGST','SGST','TAX AMOUNT','ADJUSTMENT','GRAND TOTAL']
+            estimate_sheet = [cell.value for cell in ws[1]]
+            if estimate_sheet != estimate_columns:
+                print('invalid sheet')
+                messages.error(request,'`estimate` sheet column names or order is not in the required formate.! Please check.')
+                return redirect(estimate_quotation)
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                slno,date,name,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal = row
+                if slno is None or state_of_supply is None or taxamount is None or grandtotal is None:
+                    print('estimate == invalid data')
+                    messages.error(request,'`estimate` sheet entries missing required fields.! Please check.')
+                    return redirect(estimate_quotation)
+            
+            # checking items sheet columns
+            ws = wb["items"]
+            items_columns = ['ESTIMATE NO','NAME','HSN','QUANTITY','PRICE','TAX PERCENTAGE','DISCOUNT','TOTAL']
+            items_sheet = [cell.value for cell in ws[1]]
+            if items_sheet != items_columns:
+                print('invalid sheet')
+                messages.error(request,'`items` sheet column names or order is not in the required formate.! Please check.')
+                return redirect(estimate_quotation)
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                est_no,name,hsn,quantity,price,tax_percentage,discount,total = row
+                if est_no is None or name is None or quantity is None or tax_percentage is None or total is None:
+                    print('items == invalid data')
+                    messages.error(request,'`items` sheet entries missing required fields.! Please check.')
+                    return redirect(estimate_quotation)
+            
+            # getting data from estimate sheet and create estimate.
+            incorrect_data = []
+            ws = wb['estimate']
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                slno,date,name,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal = row
+                estNo = slno
+                if slno is None:
+                    continue
+            # Fetching last bill and assigning upcoming bill no as current + 1
+            # Also check for if any bill is deleted and bill no is continuos w r t the deleted bill
+            latest_bill = Estimate.objects.filter(company = com).order_by('-id').first()
+            
+            if latest_bill:
+                last_number = int(latest_bill.ref_no)
+                new_number = last_number + 1
+            else:
+                new_number = 1
+
+            if DeletedEstimate.objects.filter(company = com).exists():
+                deleted = DeletedEstimate.objects.get(company = com)
+                
+                if deleted:
+                    while int(deleted.ref_no) >= new_number:
+                        new_number+=1
+            if not party.objects.filter(company = com, party_name = name).exists():
+                incorrect_data.append(slno)
+                # continue
+            try:
+                cntct = party.objects.get(company = com, party_name = name).contact
+                adrs = party.objects.get(company = com, party_name = name).address
+            except:
+                pass
+
+            if date is None:
+                date = dateToday
+
+            print(date,new_number,name,cntct,adrs,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal)
+
+            estimate = Estimate(
+                staff = staff,
+                company = com,
+                date = date,
+                ref_no = new_number,
+                party_name = name,
+                contact = cntct,
+                billing_address = adrs,
+                state_of_supply = 'State' if str(state_of_supply).lower() == 'state' else 'Other State',
+                description = description,
+                subtotal = subtotal,
+                cgst = cgst,
+                sgst = sgst,
+                igst = igst,
+                tax_amount = taxamount,
+                adjustment = adjustment,
+                total_amount = grandtotal,
+                balance = 0,
+                status = 'Open',
+                is_converted = False
+            )
+            estimate.save()
+
+            # Transaction history
+            history = EstimateTransactionHistory(
+                staff = staff,
+                estimate = estimate,
+                company = com,
+                action = "Create"
+            )
+            history.save()
+
+            # Items for the estimate
+            ws = wb['items']
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                est_no,name,hsn,quantity,price,tax_percentage,discount,total = row
+                if int(est_no) == int(estNo):
+                    print(row)
+                if estimate.state_of_supply == 'State' and tax_percentage:
+                    tx = 'GST'+str(tax_percentage)+'['+str(tax_percentage)+'%]'
+                elif estimate.state_of_supply == 'Other State' and tax_percentage:
+                    tx = 'IGST'+str(tax_percentage)+'['+str(tax_percentage)+'%]'
+                if discount is None:
+                    discount=0
+                if price is None:
+                    price=0
+                if not ItemModel.objects.filter(company = com, item_name = name).exists():
+                    incorrect_data.append(est_no)
+                    continue
+                try:
+                    itm = ItemModel.objects.get(company = com, item_name = name)
+                except:
+                    pass
+                Estimate_items.objects.create(staff = staff, eid = estimate, company = com, item = itm,name = name,hsn=hsn,quantity=int(quantity),price = float(price),tax=tx, discount = float(discount),total=float(total))
+        messages.success(request, 'Data imported successfully.!')
+        if incorrect_data:
+            messages.warning(request, f'Data with following SlNo could not import due to incorrect data provided - {", ".join(str(item) for item in incorrect_data)}')
+        return redirect(recurringInvoice)
     else:
         return redirect('/')
