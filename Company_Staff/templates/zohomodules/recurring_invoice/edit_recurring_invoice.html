@@ -2553,8 +2553,10 @@
         }
         var paymentMeth = `{{invoice.payment_method}}`;
         // var entryType = `{{invoice.entry_type}}`;
-
-        document.querySelector('#placeOfSupply').value = `{{invoice.place_of_supply}}`;
+        var plc = `{{invoice.place_of_supply}}`
+        if(plc != "" && plc != null && plc != 'None'){
+            document.querySelector('#placeOfSupply').value = plc;
+        }
         paymentMeth == 'None' ? document.querySelector('#paymentMethod').value = "" : document.querySelector('#paymentMethod').value = `{{invoice.payment_method}}`;
         // entryType == 'None' ? document.querySelector('#entryType').value ="" : document.querySelector('#entryType').value = `{{recInvoice.entry_type}}`;
 
@@ -3265,7 +3267,7 @@
                           </div>
                       </div>
                       <a href="#">
-                          <button type="button" class="btn btn-outline-warning ms-1" data-bs-target="#newItem" data-bs-toggle="modal">+</button>
+                          <button type="button" class="btn btn-outline-warning ms-1" data-target="#newItem" data-toggle="modal">+</button>
                       </a>
                   </div>
               
@@ -4077,15 +4079,15 @@ $('#mphone').on('input', function() {
             var sky = row.find('.skype_number').val();
             var dep = row.find('.department').val();
             var des = row.find('.designation').val();
-            console.log(sal,fn,ln, eml,wrk, mob, sky, dep, des)
-            if(sal == "" && fn == "" && ln == "" && eml == "" && wrk == "" && mob == "" && sky == "" && dep == "" && des == ""){
-                console.log('No table data')
-            }else{
-                if(sal == "" || fn == "" || ln == "" || eml == "" || wrk == "" || mob == "" || sky == "" || dep == "" || des == ""){
-                    // alert('Fill All Fields of Contact persons table')
-                    // return
-                }
-            }
+            // console.log(sal,fn,ln, eml,wrk, mob, sky, dep, des)
+            // if(sal == "" && fn == "" && ln == "" && eml == "" && wrk == "" && mob == "" && sky == "" && dep == "" && des == ""){
+            //     console.log('No table data')
+            // }else{
+            //     if(sal == "" || fn == "" || ln == "" || eml == "" || wrk == "" || mob == "" || sky == "" || dep == "" || des == ""){
+            //         // alert('Fill All Fields of Contact persons table')
+            //         // return
+            //     }
+            // }
             tSalutation.push(sal);
             tFirstName.push(fn);
             tLastName.push(ln);
@@ -4100,12 +4102,20 @@ $('#mphone').on('input', function() {
     var cols = [tSalutation,tFirstName,tLastName,tEmail,tWork,tMobile,tSkype,tDesignation,tDepartment]
     var cntactTableLength = $('#tbl tbody tr').length
     var nullExists = false
-    for(i=0; i<cols.length; i++){
-        for(j=0; j<cols[i].length; j++){
-            if(cols[i][j] == ''){
-                nullExists = true
+    if(cntactTableLength == 1 && tSalutation[0] == "" && tFirstName[0] == "" && tLastName[0] == "" && tEmail[0] == "" && tWork[0] == "" && tMobile[0] == "" && tSkype[0] == "" && tDesignation[0] == "" && tDepartment[0] == ""){
+        console.log('No table data')
+    }else{
+        for(i=0; i<cols.length; i++){
+            for(j=0; j<cols[i].length; j++){
+                if(cols[i][j] == ''){
+                    nullExists = true
+                }
             }
         }
+        // if(sal == "" || fn == "" || ln == "" || eml == "" || wrk == "" || mob == "" || sky == "" || dep == "" || des == ""){
+        //     // alert('Fill All Fields of Contact persons table')
+        //     // return
+        // }
     }
     if(nullExists){
         alert('Fill All Fields of Contact persons table')
@@ -4350,11 +4360,16 @@ $(document).on("click","#saveNewItem",function(){
     var type = $("input[name='itemType']:checked").val();
     var unit = $("#selunit").val();
     var hsn = $("#myInputField").val();
+    var purAccount = $("#myaccount").val();
     var trck;
     if($('#trackInv').prop('checked')){
         trck = 1
     }else{
         trck = 0
+    }
+    if(type == undefined){
+        alert('Please select item type')
+        return
     }
     if($('#gridRadios3').prop('checked') || $('#gridRadios4').prop('checked')){
         if($('#gridRadios3').prop('checked')){
@@ -4367,7 +4382,7 @@ $(document).on("click","#saveNewItem",function(){
         return
     }
 
-    if (name !="" && type !="" && unit != "" && hsn != "" && tax != ""){
+    if (name !="" && type !="" && unit != "" && hsn != "" && tax != "" && purAccount != ""){
         $.ajax({
             type : 'POST',
             url:"{% url 'createNewItemAjax' %}",
@@ -4380,7 +4395,7 @@ $(document).on("click","#saveNewItem",function(){
                 'intra_st' : $("#intraStateTax").val(),
                 'inter_st' : $("#interStateTax").val(),
                 'pcost' : $("#purprice").val(),
-                'pur_account' : $("#myaccount").val(),
+                'pur_account' : purAccount,
                 'pur_desc' : $("#purchaseDescription").val(),
                 'salesprice' : $("#salesprice").val(),
                 'sale_account' : $("#salesAccount").val(),

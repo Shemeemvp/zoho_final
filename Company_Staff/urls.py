@@ -417,6 +417,8 @@ urlpatterns = [
     path('Company/rec_invoice_import_sample_file',views.downloadRecurringInvoiceSampleImportFile, name='downloadRecurringInvoiceSampleImportFile'),
     path('Company/import_recurring_invoice',views.importRecurringInvoiceFromExcel, name='importRecurringInvoiceFromExcel'),
 
+    # < -------------------- > Recurring Invoice - End < ------------------------------- >
+
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS)

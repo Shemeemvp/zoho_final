@@ -864,6 +864,9 @@ class Journal(models.Model):
     def __str__(self):
         return self.journal_no
     
+    def getNumFieldName(self):
+        return 'journal_no'
+    
 class JournalEntry(models.Model):
     journal = models.ForeignKey(Journal, on_delete=models.CASCADE,null=True)
     company = models.ForeignKey(CompanyDetails, on_delete=models.CASCADE, null=True, blank=True)
@@ -977,3 +980,183 @@ class Recurring_Invoice_Comments(models.Model):
     company = models.ForeignKey(CompanyDetails, on_delete=models.CASCADE, null=True)
     recurring_invoice = models.ForeignKey(RecurringInvoice,on_delete=models.CASCADE,null=True,blank=True)
     comments = models.CharField(max_length=500,null=True,blank=True)
+
+# < -------------------- > Recurring Invoice - End < ------------------------------- >
+
+#-----------------invoice -----------------------------#
+class invoice(models.Model):
+    company = models.ForeignKey(CompanyDetails,on_delete=models.CASCADE,null=True,blank=True)
+    login_details = models.ForeignKey(LoginDetails, on_delete=models.CASCADE,null=True,blank=True)
+    customer = models.ForeignKey(Customer,on_delete=models.CASCADE,null=True,blank=True)
+    payment_terms = models.ForeignKey(Company_Payment_Term,on_delete=models.CASCADE,null=True,blank=True)
+
+    customer_email=models.EmailField(max_length=220,null=True,blank=True)
+    customer_billingaddress=models.CharField(max_length=220,null=True,blank=True)
+    customer_GSTtype=models.CharField(max_length=220,null=True,blank=True)
+    customer_GSTnumber=models.CharField(max_length=220,null=True,blank=True)
+    customer_place_of_supply=models.CharField(max_length=220,null=True,blank=True)
+    date = models.DateField(auto_now_add=True, null=True, blank=True) 
+    expiration_date = models.DateField(auto_now_add=True, null=True, blank=True) 
+    reference_number=models.IntegerField(blank=True,null=True,)
+    invoice_number=models.CharField(max_length=220,null=True,blank=True) 
+    payment_method=models.CharField(max_length=220,null=True,blank=True) 
+    cheque_number=models.CharField(max_length=220,null=True,blank=True) 
+    UPI_number=models.CharField(max_length=220,null=True,blank=True) 
+    bank_account_number=models.CharField(max_length=220,null=True,blank=True) 
+    description=models.CharField(max_length=220,null=True,blank=True) 
+    terms_and_condition=models.CharField(max_length=220,null=True,blank=True) 
+    document=models.FileField(upload_to="images/",null=True)
+    sub_total=models.FloatField(default=0.0, null=True, blank=True)
+    CGST=models.FloatField(default=0.0, null=True, blank=True)
+    SGST=models.FloatField(default=0.0, null=True, blank=True)
+    IGST = models.FloatField(default=0.0, null=True, blank=True)
+    price_list_applied = models.BooleanField(null=True, default=False)
+    price_list = models.ForeignKey(PriceList, on_delete = models.SET_NULL,null=True)
+
+
+    tax_amount=models.FloatField(default=0.0, null=True, blank=True)
+    shipping_charge=models.FloatField(default=0.0, null=True, blank=True)
+    adjustment=models.FloatField(default=0.0, null=True, blank=True)
+    grand_total=models.FloatField(default=0.0, null=True, blank=True)
+    advanced_paid=models.FloatField(default=0.0, null=True, blank=True)
+    balance=models.FloatField(default=0.0, null=True, blank=True)
+    status=models.CharField(max_length=220,null=True,blank=True)
+
+    def getNumFieldName(self):
+        return 'invoice_number'
+    
+#------------Retainer_invoice---------------
+class RetainerInvoice(models.Model):
+    company = models.ForeignKey(CompanyDetails, on_delete=models.CASCADE,null=True,blank=True)
+    logindetails = models.ForeignKey(LoginDetails, on_delete=models.CASCADE,null=True,blank=True)
+    customer_name=models.ForeignKey(Customer,on_delete=models.CASCADE)
+    customer_name1=models.CharField(max_length=100,null=True,blank=True)
+    customer_mailid = models.CharField(max_length=100,null=True,blank=True)
+    customer_placesupply=models.CharField(max_length=100,null=True,blank=True)
+    retainer_invoice_number=models.CharField(max_length=255)
+    refrences=models.CharField(max_length=255)
+    retainer_invoice_date=models.DateField()
+    advance=models.IntegerField(null=True)
+    total_amount=models.CharField(max_length=100)
+    customer_notes=models.TextField()
+    terms_and_conditions=models.TextField()
+    is_draft=models.BooleanField(default=True)
+    is_sent=models.BooleanField(default=False)
+    balance=models.CharField(max_length=100,null=True,blank=True)
+
+    def getNumFieldName(self):
+        return 'retainer_invoice_number'
+    
+
+#-------Delivery Challan ------start-------------------------------
+
+class Delivery_challan(models.Model):
+    login_details = models.ForeignKey(LoginDetails, on_delete=models.CASCADE,null=True,blank=True)
+    company=models.ForeignKey(CompanyDetails,on_delete=models.CASCADE,null=True,blank=True)
+    customer=models.ForeignKey(Customer, on_delete=models.CASCADE,null=True,blank=True)
+   
+    challan_date=  models.DateField(auto_now_add=True, null=True)
+    reference_number = models.IntegerField(null=True)  
+    challan_number = models.CharField(max_length=200,null=True)
+    challan_type = models.CharField(max_length=200,null=True)
+    description = models.TextField(max_length=200,null=True)
+    terms_condition = models.CharField(max_length=200,null=True)
+    document=models.FileField(upload_to="images/",null=True)
+    sub_total = models.FloatField(default=0.0, null=True, blank=True)
+    cgst = models.FloatField(default=0.0, null=True, blank=True)
+    sgst = models.FloatField(default=0.0, null=True, blank=True)
+    tax_amount = models.FloatField(default=0.0, null=True, blank=True)
+    shipping_charge = models.FloatField(default=0.0, null=True, blank=True)
+    adjustment = models.FloatField(default=0.0, null=True, blank=True)
+    grand_total = models.FloatField(default=0.0, null=True, blank=True)
+    advance = models.FloatField(default=0.0, null=True, blank=True)
+    balance = models.FloatField(default=0.0, null=True, blank=True)
+    status = models.CharField(max_length=50,null=True)
+
+    def getNumFieldName(self):
+        return 'challan_number'
+
+
+class Bill(models.Model):
+    Vendor = models.ForeignKey(Vendor,on_delete=models.CASCADE,null=True,blank=True)
+    Bill_Number = models.CharField(max_length=220,null=True,blank=True)
+    Reference_Number = models.IntegerField(null=True)
+    Purchase_Order_Number = models.CharField(max_length=220,null=True,blank=True)
+    Bill_Date = models.DateField(null=True)
+
+    Company_Payment_Terms = models.ForeignKey(Company_Payment_Term,on_delete=models.CASCADE,null=True,blank=True)
+    Due_Date = models.DateField(null=True)
+    Payment_Method = models.CharField(max_length=220,null=True,blank=True)
+    Cheque_Number = models.CharField(max_length=220,null=True,blank=True)
+    UPI_Id = models.CharField(max_length=220,null=True,blank=True)
+    Bank_Account = models.CharField(max_length=220,null=True,blank=True)
+    Customer = models.ForeignKey(Customer, on_delete=models.CASCADE,null=True,blank=True)
+    Description = models.CharField(max_length=220,null=True,blank=True)
+    Document = models.FileField(upload_to='doc/')
+    Sub_Total = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    CGST = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    SGST = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    IGST = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    Tax_Amount = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    Shipping_Charge =models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    Adjustment_Number = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    Grand_Total = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    Advance_amount_Paid = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    Balance = models.DecimalField(max_digits=10, decimal_places=2,default=0.00,null=True,blank=True)
+    Status = models.CharField(max_length=220,null=True,blank=True)
+    Login_Details = models.ForeignKey(LoginDetails, on_delete=models.CASCADE,null=True,blank=True)
+    Company = models.ForeignKey(CompanyDetails,on_delete=models.CASCADE)
+    Action = models.CharField(max_length=220,null=True,blank=True)
+
+    def getNumFieldName(self):
+        return 'Bill_Number'
+    
+class SaleOrder(models.Model):
+    company = models.ForeignKey(CompanyDetails, on_delete=models.CASCADE)
+    login_details = models.ForeignKey(LoginDetails, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE,blank=True, null=True)
+    customer_email = models.EmailField()
+    customer_billing_address = models.CharField(max_length=255)
+    customer_gst_type = models.CharField(max_length=255)
+    customer_gst_number = models.CharField(max_length=255)
+    customer_place_of_supply = models.CharField(max_length=255)
+    sales_order_date = models.DateField()
+    payment_terms = models.ForeignKey(Company_Payment_Term, on_delete=models.CASCADE,blank=True, null=True)
+    expiration_date = models.DateField()
+    reference_number = models.CharField(max_length=255)
+    sales_order_number = models.CharField(max_length=255)
+    PAYMENT_METHOD_CHOICES = [
+        ('Cash', 'Cash'),
+        ('Cheque', 'Cheque'),
+        ('UPI', 'UPI'),
+        ('Bank', 'Bank'),
+    ]
+    payment_method = models.CharField(max_length=255, choices=PAYMENT_METHOD_CHOICES)
+    
+    cheque_number = models.CharField(max_length=255, blank=True, null=True)
+    upi_number = models.CharField(max_length=255, blank=True, null=True)
+    bank_account_number = models.CharField(max_length=255, blank=True, null=True)
+    
+    
+    description = models.CharField(max_length=255)
+    terms_and_condition = models.TextField()
+    document = models.FileField(upload_to='documents/')
+    sub_total = models.DecimalField(max_digits=10,decimal_places=2,blank=True, null=True)
+    cgst = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    sgst = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    tax_amount_igst = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    shipping_charge = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    adjustment = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    grand_total = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    advanced_paid = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    balance = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)
+    Save='Save'
+    Draft='Draft'
+    STATUS_CHOICES = [
+        ('Draft', 'Draft'),
+        ('Save', 'Save'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Draft')
+
+    def getNumFieldName(self):
+        return 'sales_order_number'

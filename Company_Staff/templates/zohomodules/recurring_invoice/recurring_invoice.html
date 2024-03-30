@@ -189,7 +189,7 @@
         <div class="modal-content" style="background-color: #3b3b3b;">
             <div class="modal-header">
                 <h3 class="modal-title text-light" id="exampleModalLabel">Import Recurring Invoice</h3>
-                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="btn close text-white" data-bs-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true" style="font-size: x-large;">&times;</span>
                 </button>
               </div>
@@ -197,22 +197,22 @@
                 <div class="file_instructions">
                     <div class="alert alert-danger" role="alert">
                         <span class="fw-bolder">IMPORTANT:</span>
-                        <p>File should have 2 sheets named 'estimate' & 'items' and column name & order should be in the given formate(Uppercase).</p>
-                        <p class="fw-bolder">Estimate sheet - SLNO*, DATE, NAME*, STATE OF SUPPLY*, DESCRIPTION, SUB TOTAL*, IGST*, CGST*, SGST*, TAX AMOUNT*, ADJUSTMENT, GRAND TOTAL* </p>
-                        <p class="fw-bolder">Items sheet - ESTIMATE NO**, NAME*, HSN*, QUANTITY*, PRICE*, TAX PERCENTAGE*, DISCOUNT, TOTAL* </p>
+                        <p>File should have 2 sheets named 'recurring_invoice' & 'items' and column name & order should be in the given formate(Uppercase).</p>
+                        <p class="fw-bolder">Recurring Invoice sheet - SLNO*, CUSTOMER*, DATE*, PLACE OF SUPPLY*, PROFILE NAME, ENTRY TYPE, RI NO*, TERMS*, REPEAT EVERY*, PRICE LIST, DESCRIPTION, SUB TOTAL*, IGST*, CGST*, SGST*, TAX AMOUNT*, ADJUSTMENT, SHIPPING CHARGE, GRAND TOTAL*, ADVANCE </p>
+                        <p class="fw-bolder">Items sheet - RI NO**, PRODUCT*, HSN*, QUANTITY*, PRICE*, TAX PERCENTAGE*, DISCOUNT, TOTAL* </p>
                         <p>* All required columns should be filled.</p>
-                        <p>** <b>ESTIMATE NO</b> is <b>SLNO</b> of estimate</p>
-                        <p>State of supply should be '<b>State</b>' or '<b>Other State</b>'. State -> CGST* & SGST*, Other State -> IGST*</p>
+                        <p>** <b>RI NO</b> is <b>SLNO</b> of recurring_invoice</p>
+                        <p>Place of supply should be in the give format with state code('Ex: [KL]-Kerala') or '[OT]-Other Territory'.</p>
                         <p>Date format should be 'YYYY-MM-DD' or 'DD-MM-YYYY'.</p>
                     </div>
                 </div>
                 <div class="sample_file mb-2">
-                    <a href="{% url 'downloadRecurringInvoiceSampleImportFile' %}" class="fw-bolder">Download Sample File</a>
+                    <a href="{% url 'downloadRecurringInvoiceSampleImportFile' %}" class="fw-bolder btn btn-outline-warning btn-sm">Download Sample File</a>
                 </div>
                 <form id="importEstimateForm" action="{% url 'importRecurringInvoiceFromExcel' %}" method="POST" class="form" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="excel_file" class="form-label">File</label>
+                        <label for="excel_file" class="form-label text-white">File</label>
                         <input id="excel_file" class="form-control" type="file" name="excel_file" required>
                     </div>
                     <div class="d-flex justify-content-center mt-4">
