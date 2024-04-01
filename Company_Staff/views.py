@@ -15525,7 +15525,8 @@ def addRecurringInvoice(request):
 
         # Finding next rec_invoice number w r t last rec_invoice number if exists.
         nxtInv = ""
-        lastInv = RecurringInvoice.objects.filter(company = cmp).last()
+        lastInv = RecurringInvoice.objects.filter(company=cmp).last()
+
         if lastInv:
             inv_no = str(lastInv.rec_invoice_no)
             numbers = []
@@ -15535,26 +15536,17 @@ def addRecurringInvoice(request):
                     numbers.append(word)
                 else:
                     stri.append(word)
-            
-            num=''
-            for i in numbers:
-                num +=i
-            
-            st = ''
-            for j in stri:
-                st = st+j
 
-            inv_num = int(num)+1
+            num = ''.join(numbers)
+            st = ''.join(stri)
 
-            if num[0] == '0':
-                if inv_num <10:
-                    nxtInv = st+'0'+ str(inv_num)
-                else:
-                    nxtInv = st+ str(inv_num)
+            inv_num = int(num) + 1
+            if num[0] == 0:
+                nxtInv = st + num.zfill(len(num)) 
             else:
-                nxtInv = st+ str(inv_num)
+                nxtInv = st + str(inv_num).zfill(len(num))
         else:
-            nxtInv = 'RI01'
+            nxtInv = 'RI001'
         context = {
             'cmp':cmp,'allmodules':allmodules, 'details':dash_details, 'customers': cust,'pTerms':trm, 'repeat':repeat, 'banks':bnk, 'priceListItems':priceList, 'items':itms,
             'invNo':nxtInv, 'ref_no':new_number,'units': units,'accounts':accounts,
@@ -15577,7 +15569,7 @@ def getCustomerDetailsAjax(request):
 
         if cust:
             context = {
-                'status':True, 'id':cust.id, 'email':cust.customer_email, 'gstType':cust.GST_treatement,'shipState':cust.place_of_supply,'gstin':False if cust.GST_number == "" or cust.GST_number == None else True, 'gstNo':cust.GST_number,
+                'status':True, 'id':cust.id, 'email':cust.customer_email, 'gstType':cust.GST_treatement,'shipState':cust.place_of_supply,'gstin':False if cust.GST_number == "" or cust.GST_number == None or cust.GST_number == 'null' else True, 'gstNo':cust.GST_number,
                 'street':cust.billing_address, 'city':cust.billing_city, 'state':cust.billing_state, 'country':cust.billing_country, 'pincode':cust.billing_pincode
             }
             return JsonResponse(context)
@@ -15772,7 +15764,7 @@ def createRecurringInvoice(request):
                     
             RecurringInvoiceHistory.objects.create(
                 company = com,
-                login_details = com.login_details,
+                login_details = log_details,
                 recurring_invoice = inv,
                 action = 'Created'
             )
@@ -15876,24 +15868,15 @@ def checkRecurringInvoiceNumber(request):
                     numbers.append(word)
                 else:
                     stri.append(word)
-            
-            num=''
-            for i in numbers:
-                num +=i
-            
-            st = ''
-            for j in stri:
-                st = st+j
 
-            inv_num = int(num)+1
+            num = ''.join(numbers)
+            st = ''.join(stri)
 
-            if num[0] == '0':
-                if inv_num <10:
-                    nxtInv = st+'0'+ str(inv_num)
-                else:
-                    nxtInv = st+ str(inv_num)
+            inv_num = int(num) + 1
+            if num[0] == 0:
+                nxtInv = st + num.zfill(len(num)) 
             else:
-                nxtInv = st+ str(inv_num)
+                nxtInv = st + str(inv_num).zfill(len(num))
         # else:
         #     nxtInv = 'RI01'
 
@@ -15938,6 +15921,17 @@ def newSalesCustomerAjax(request):
             com = CompanyDetails.objects.get(login_details = log_details)
         else:
             com = StaffDetails.objects.get(login_details = log_details).company
+
+        if Customer.objects.filter(company = com, GST_number=request.POST['gst_number']).exists():
+            return JsonResponse({'status':False, 'message':'GSTIN already exists'})
+        elif Customer.objects.filter(company = com, PAN_number=request.POST['pan_number']).exists():
+            return JsonResponse({'status':False, 'message':'PAN No. already exists'})
+        elif Customer.objects.filter(company = com, customer_email=request.POST['vendor_email']).exists():
+            return JsonResponse({'status':False, 'message':'Email already exists'})
+        elif Customer.objects.filter(company = com, customer_phone=request.POST['w_phone']).exists():
+            return JsonResponse({'status':False, 'message':'Work Phone no. already exists'})
+        elif Customer.objects.filter(company = com, customer_mobile=request.POST['m_phone']).exists():
+            return JsonResponse({'status':False, 'message':'Mobile No. already exists'})
 
         if request.method=="POST":
             customer_data=Customer()
@@ -16168,7 +16162,7 @@ def createNewItemAjax(request):
 
             Item_Transaction_History.objects.create(
                 company = com,
-                logindetails = com.login_details,
+                logindetails = log_details,
                 items = item,
                 Date = createdDate,
                 action = 'Created'
@@ -16493,7 +16487,7 @@ def updateRecurringInvoice(request, id):
                     
             RecurringInvoiceHistory.objects.create(
                 company = com,
-                login_details = com.login_details,
+                login_details = log_details,
                 recurring_invoice = rec_inv,
                 action = 'Edited'
             )
@@ -16892,7 +16886,7 @@ def importRecurringInvoiceFromExcel(request):
                 # Transaction history
                 history = RecurringInvoiceHistory(
                     company = com,
-                    login_details = com.login_details,
+                    login_details = log_details,
                     recurring_invoice = recInv,
                     action = 'Created'
                 )
@@ -16947,22 +16941,13 @@ def getNextRINumber(recInv):
         else:
             stri.append(word)
     
-    num=''
-    for i in numbers:
-        num +=i
-    
-    st = ''
-    for j in stri:
-        st = st+j
+    num = ''.join(numbers)
+    st = ''.join(stri)
 
-    ri_num = int(num)+1
-
-    if num[0] == '0':
-        if ri_num <10:
-            nxtRecInv = st+'0'+ str(ri_num)
-        else:
-            nxtRecInv = st+ str(ri_num)
+    inv_num = int(num) + 1
+    if num[0] == 0:
+        nxtRecInv = st + num.zfill(len(num)) 
     else:
-        nxtRecInv = st+ str(ri_num)
+        nxtRecInv = st + str(inv_num).zfill(len(num))
 
     return nxtRecInv

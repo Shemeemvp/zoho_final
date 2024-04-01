@@ -96,7 +96,8 @@
     font-weight: bold;
   }
   .dropdown-item.customers-options:hover, .dropdown-item.items-options:hover{
-    background: blue !important;
+    background: white !important;
+    color: black !important;
     cursor: pointer;
   }
 </style>
@@ -300,7 +301,7 @@
                   </div>
                 </div>
 
-                <div class="row mt-2">
+                <div class="row mt-2" id="billAddressSection">
                   <label for="" class="col-md-3 labels">Billing Address</label>
                   <div class="col-md-6">
                     <textarea class="form-control text-white bg-black" name="bill_address" id="billAddress" rows="4" readonly></textarea>
@@ -527,7 +528,7 @@
                           <input type="checkbox" class="form-check-input" name="priceList" id="applyPriceList" value="applyPriceList">
                           <label class="form-check-label labels" for="applyPriceList">Apply Price List</label>
                           <br>
-                          <span class="text-success" id="custPriceListName" style="display: none;"></span>
+                          <span class="text-warning" id="custPriceListName" style="display: none;"></span>
                       </div>
                   </div>
                   <div class="col-md-6"></div>
@@ -877,7 +878,7 @@
 
             <div class=" form-group row">
               <div class="col-sm-12 col-md-3 col-lg-3 col-form-label">
-                  <label class="labels">Primary Contact</label>
+                  <label class="labels">Primary Contact*</label>
               </div>
               <div class="col-sm-12 col-md-1 col-lg-1" >
                   <select id="select1"  name="salutation" class="form-control bg-light text-dark mt-2 " >
@@ -914,7 +915,7 @@
               </div>
           </div>
           <div class="form-group row mt-4">
-              <div class="col-sm-12 col-md-3 col-lg-3 col-form-label"><label class="labels">Customer Email</label></div>
+              <div class="col-sm-12 col-md-3 col-lg-3 col-form-label"><label class="labels">Customer Email*</label></div>
               <div class="col-sm-12 col-md-6 col-lg-7">
                   <input  type="email" class="form-control bg-light text-dark" name="vendor_email"  id="vendor-email"  required> 
                   <span class=" text-danger mt-1" id="email-message-id" style="font-size: 10px;"></span>   
@@ -923,7 +924,7 @@
 
           <div class="form-group row mt-4">
               <div class="col-sm-12 col-md-3 col-lg-3 ">
-                  <label class="col-form-label text-white">Customer phone</label>
+                  <label class="col-form-label text-white">Customer phone*</label>
               </div>
               <div class="col-sm-12 col-md-3 col-lg-3">
                   <input id="workphone"  type="text" class="form-control bg-light text-dark mt-2" pattern="[0-9]{7}"  name="w_phone" placeholder="work phone" required>
@@ -1023,7 +1024,7 @@
 
               <fieldset4 id="pan" style="display: none;">
                 <div class=" row mt-4">
-                    <label class="col-sm-12 col-md-3 col-lg-3 col-form-label text-white" > PAN</label>
+                    <label class="col-sm-12 col-md-3 col-lg-3 col-form-label text-white" > PAN*</label>
                     
                     <div class=" col-sm-12 col-md-3 col-lg-3">
                         <input type="text" class="form-control bg-light text-dark"  id="panInput"  name="pan_number">  
@@ -1096,7 +1097,7 @@
               </div>
               
               <div class="form-group row mt-4">
-                  <label class="col-sm-12 col-md-3 col-lg-3 col-form-label text-white" > Currency*</label>
+                  <label class="col-sm-12 col-md-3 col-lg-3 col-form-label text-white" > Currency</label>
                   
                   <div class=" col-sm-12 col-md-3 col-lg-3">
                       <select name="currency" id="crncy" class="form-control bg-light text-dark">
@@ -2548,7 +2549,12 @@
                   document.getElementById('customerEmail').value = data.email;
                   document.getElementById('placeOfSupply').value = data.shipState;
                   document.getElementById('customerGstType').value = data.gstType;
-                  document.getElementById('billAddress').value = data.street + ',' + data.city + '\n' + data.state + '\n' + data.country  + '\n' + data.pincode ;
+                  if(data.street == "" && data.city == "" && data.state == ""){
+                    $("#billAddressSection").hide();
+                  }else{
+                    $('#billAddressSection').show();
+                    document.getElementById('billAddress').value = data.street + ',' + data.city + '\n' + data.state + '\n' + data.country  + '\n' + data.pincode ;
+                  }
                   if(data.gstin){
                       document.getElementById('customerGstInDisplay').style.display = 'flex';
                       document.getElementById('customerGSTIN').value = data.gstNo;
@@ -4005,7 +4011,7 @@ $('#mphone').on('input', function() {
         return
     }
 
-      if(fName != "" && lName != "" && placeSupply != "" && gstType != "" && panNo != "" && Email != "" && Mob != "" && street != "" && city != "" && state != "" && pin != "" && country != "" && tax_ref != undefined){
+      if(fName != "" && lName != "" && placeSupply != "" && gstType != "" && panNo != "" && Email != "" && Mob != "" && tax_ref != undefined){
           $.ajax({
               type : 'POST',
               url:"{% url 'newSalesCustomerAjax' %}",
@@ -4322,35 +4328,30 @@ function reloadItems() {
 
         success: function(data) {
             $('#items-table-body tr').each(function () {
-            var currentRow = $(this);
-            var html = currentRow.html();
-            
-            if (html !== '') {
-                currentRow.find(".items-available").find("li").remove();
+                var currentRow = $(this);
+                var html = currentRow.html();
+                
+                if (html !== '') {
+                    currentRow.find(".items-available").find("li").remove();
 
-                $.each(data, function(key, value) {
-                    currentRow.find(".items-available").append(`
-                        <li class="dropdown-item items-options text-white" onclick="getItemDetails($(this).parent().prev().attr('id'),'${value[1]}')">${value[1]}</li>`
-                    );
-                });
-
-                console.log('Success');
-            }
-        });
-
-
+                    $.each(data, function(key, value) {
+                        console.log(value[1]);
+                        currentRow.find(".items-available").append(`<li class="dropdown-item items-options text-white" onclick="getItemDetails($(this).parent().prev().attr('id'),'${value[1]}')">${value[1]}</li>`);
+                    });
+                }
+            });
         },
         error: function(xhr, status, error) {
             console.error(xhr.responseText);
         }
 
     });
-    if ($('#createNewAccount').hasClass('show')){
-        $('#createNewAccount').modal('toggle');
+    if ($('#newAccount').hasClass('show')){
+        $('#newAccount .close_account_modal').click();
     }
 
-    if ($('#createNewUnit').hasClass('show')){
-        $('#createNewUnit').modal('toggle');
+    if ($('#unitmodal').hasClass('show')){
+        $('#unitmodal .close_unit_modal').click();
     }
 }
 

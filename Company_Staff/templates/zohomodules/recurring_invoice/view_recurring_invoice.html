@@ -242,14 +242,21 @@
 
   .comments-table-container table, .history-table-container table {
     width: 100%;
-    border-collapse: collapse;
+    /* border-collapse: collapse; */
   }
 
-  .comments-table-container th, .history-table-container th, .comments-table-container td, .history-table-container td {
-    border: 1px solid #ddd;
+.comments-table-container td, .history-table-container td {
+    /* border: 1px solid #ddd; */
     padding: 8px;
     color: white;
-    text-align: left;
+    text-align: center;
+  }
+
+  .comments-table-container th, .history-table-container th {
+    border-bottom: 1px solid #ddd;
+    padding: 8px;
+    color: white;
+    text-align: center;
   }
 
   @media print {
@@ -536,7 +543,7 @@
 
                       <div class="row mt-4">
                         <div class="col-md-8">
-                          <h5 class="fw-bold" style="border-bottom: 1px solid rgba(128, 128, 128, 0.6); width: fit-content;">Billing Details</h5>
+                          <h5 class="fw-bold" style="border-bottom: 1px solid rgba(128, 128, 128, 0.6); width: fit-content;">Recurring Invoice Details</h5>
                         </div>
                         <div class="col-md-4"></div>
                       </div>
@@ -572,20 +579,22 @@
                         <h6 class="mb-0">Repeat Every</h6>
                         <p class="mb-0 text-right">{{invoice.repeat_every.repeat_every}}</p>
                       </div>
+                      {% if invoice.billing_address != "" %}
                       <div class="d-flex px-3 justify-content-between text-black mb-2">
                         <h6 class="mb-0">Address</h6>
                         <p class="mb-0 text-right">{{invoice.billing_address|linebreaksbr}}</p>
                       </div>
+                      {% endif %}
                      
                     </div>
 
                     <div class="col-md-6 px-3">
                       <div class="px-3 py-3 mb-3" style="background-color: #383838; border-radius: 6px;">
-                        <h4 class="text-white my-3" style="text-align: center;">Recurring Invoice Details</h4>
+                        <h4 class="text-white my-3" style="text-align: center;">Recurring Invoice Tax Details</h4>
                         <hr class="text-white" style="margin-left: 5%; margin-right: 5%">
                         <div class="d-flex justify-content-between mb-4">
-                            <h6 class="text-white" style="font-weight: 600;">Bill Status</h6>
-                            {% if invoice.status == 'Draft' %} <span class="text-info h5" style="font-weight: 600;">DRAFT</span> {% else %} <span class="text-success h5"  style="font-weight: 600;">SAVED</span> {% endif %}
+                            <h6 class="text-white" style="font-weight: 600;">Rec. Invoice Status</h6>
+                            {% if invoice.status == 'Draft' %} <span class="text-info h5" style="font-weight: 600;">DRAFT</span> {% else %} <span class="text-warning h5"  style="font-weight: 600;">SAVED</span> {% endif %}
                         </div>
                         <div class="d-flex justify-content-between mb-4 text-white">
                             <h6 class="text-white">Sub Total</h6>
@@ -1443,7 +1452,7 @@
                 <span class="my-2 font-weight-bold d-flex justify-content-center">No Comments.!</span>
                 {% else %}
                 <div class="container-fluid comments-table-container">
-                    <table class="table mt-4">
+                    <table class="table table-borderless mt-4">
                         <thead>
                             <tr>
                                 <th class="text-center">sl no.</th>
