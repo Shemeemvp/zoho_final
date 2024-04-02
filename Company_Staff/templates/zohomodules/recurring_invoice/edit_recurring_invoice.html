@@ -1529,7 +1529,7 @@
                   </button> 
                   
 
-                  <button type="button" class="close btn save_btn rounded-pill text-grey w-50 my-1 mx-1 btn-outline-warning" 
+                  <button type="button" class="close btn save_btn rounded-pill text-grey w-50 my-1 mx-1 btn-outline-warning cust_payment_modal_close" 
                   data-dismiss="modal" aria-label="Close">
                       <span aria-hidden="true">Cancel</span>
                   </button>
@@ -4219,7 +4219,7 @@ $('#mphone').on('input', function() {
           success: function(data) {
               console.log('Ajax Response ->',data);
               var custDrpDwn = $('#cust_drop');
-            //   custDrpDwn.empty();
+              custDrpDwn.empty();
               custDrpDwn.append(`<li class="dropdown-item customers-options text-white" onclick="getCustomerDetails('','')">Select Customer</li>`);
 
               $.each(data, function (key, value) {
@@ -4244,8 +4244,8 @@ $('#mphone').on('input', function() {
       });
       // refreshCustomerDetails();
 
-      if ($('#newCustomerPaymentTerm').hasClass('show')){
-          $('#newCustomerPaymentTerm').modal('toggle');
+      if ($('#newpayment').hasClass('show')){
+          $('#newpayment .cust_payment_modal_close').click();
       }
   }
 </script>
